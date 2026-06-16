@@ -476,6 +476,24 @@ export class SnapshotStore {
     return snapshot.files.find((f) => normalizeRelativePath(f.path) === normalized);
   }
 
+  async findMostRecentSnapshotFile(
+    relativePath: string
+  ): Promise<{ snapshot: Snapshot; file: SnapshotFile } | undefined> {
+    const normalized = normalizeRelativePath(relativePath);
+    const snapshots = await this.listSnapshots();
+
+    for (const snapshot of snapshots) {
+      const file = snapshot.files.find(
+        (f) => normalizeRelativePath(f.path) === normalized
+      );
+      if (file) {
+        return { snapshot, file };
+      }
+    }
+
+    return undefined;
+  }
+
   resolveStorageKeyPath(snapshotId: string, storageRelativePath: string): string {
     return path.join(this.snapshotDir(snapshotId), storageRelativePath);
   }

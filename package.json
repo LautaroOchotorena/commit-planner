@@ -2,7 +2,7 @@
   "name": "commit-planner",
   "displayName": "Commit Planner",
   "description": "Save planned commits as snapshots of selected working tree files. Activate to swap files temporarily, organize into colored groups, and stage each group for commit when ready.",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "icon": "icon.png",
   "engines": {
     "vscode": "^1.74.0"

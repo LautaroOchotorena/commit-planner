@@ -1,4 +1,7 @@
-export type GitFileStatus = "M" | "A" | "D" | "R" | "C" | "??" | "U" | string;
+/** Not present in `git status --porcelain` but included from a saved planned commit. */
+export const SNAPSHOT_ONLY_GIT_STATUS = "SN" as const;
+
+export type GitFileStatus = "M" | "A" | "D" | "R" | "C" | "??" | "U" | typeof SNAPSHOT_ONLY_GIT_STATUS | string;
 
 export interface SnapshotFile {
   path: string;
@@ -63,4 +66,16 @@ export interface FileSnapshotRef {
   snapshotName?: string;
   createdAt: string;
   isActive: boolean;
+}
+
+export type FileSelectionMark =
+  | "never_snapshotted"
+  | "modified_since_snapshot"
+  | "in_past_snapshot";
+
+export interface FileSelectionHint {
+  mark?: FileSelectionMark;
+  snapshotId?: string;
+  snapshotName?: string;
+  snapshotCreatedAt?: string;
 }

@@ -5,6 +5,19 @@ All notable changes to the **Commit Planner** extension are documented in this f
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.1] - 2026-06-14
+
+### Added
+
+- File selection marks when creating a planned commit:
+  - **Never in a planned commit** — files that have not appeared in any saved snapshot
+  - **Changed since …** — files included in a past snapshot whose current content differs from the most recent snapshot that contained them
+- Marked files are sorted to the top of the file picker for easier review
+- Color-coded icons: green (never in a planned commit), orange (changed since a past planned commit), blue (in a past planned commit, not in Git status)
+- Files from saved planned commits that no longer appear in `git status` are included in the selection list
+- Persistent file picker during snapshot setup with **Open File** and **Compare with Last Snapshot** toolbar buttons; the picker stays open while you read files (`ignoreFocusOut`)
+- Same review buttons on all snapshot setup steps: planned commit name, group organization choice, group name input, and add-another-group prompt
+
 ## [0.1.0] - 2026-06-13
 
 Initial release.
@@ -42,4 +55,5 @@ Initial release.
 - MVP supports a single workspace folder
 - Git renames are treated as delete + add
 
+[0.1.1]: https://github.com/LautaroOchotorena/commit-planner/releases/tag/v0.1.1
 [0.1.0]: https://github.com/LautaroOchotorena/commit-planner/releases/tag/v0.1.0

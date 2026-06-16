@@ -1,12 +1,35 @@
 import * as vscode from "vscode";
-import { formatGitStatusLabel } from "./git";
-import { CreateSnapshotGroupInput, GitStatusEntry } from "./types";
+import { promptSelectGitFiles } from "./fileSelectionQuickPick";
+import {
+  promptReviewableInputBox,
+  promptReviewableQuickPick,
+  SnapshotReviewContext,
+} from "./snapshotWizardReview";
+import { SnapshotStore } from "./snapshotStore";
+import { CreateSnapshotGroupInput, FileSelectionHint, GitStatusEntry } from "./types";
+
+function buildReviewContext(
+  entries: GitStatusEntry[],
+  store: SnapshotStore,
+  workspaceRoot: string,
+  hints: Map<string, FileSelectionHint>
+): SnapshotReviewContext {
+  return { entries, hints, store, workspaceRoot };
+}
 
 export async function promptOrganizeIntoGroups(
-  entries: GitStatusEntry[]
+  entries: GitStatusEntry[],
+  store: SnapshotStore,
+  workspaceRoot: string,
+  hints: Map<string, FileSelectionHint>
 ): Promise<CreateSnapshotGroupInput[] | undefined> {
-  const choice = await vscode.window.showQuickPick(
-    [
+  const ctx = buildReviewContext(entries, store, workspaceRoot, hints);
+
+  const choice = await promptReviewableQuickPick({
+    ctx,
+    title: "Planned Commit Groups",
+    placeHolder: "Organize files into planned commit groups?",
+    items: [
       {
         label: "Yes, create groups",
         description: "Each group name becomes the commit message when staging in Source Control",
@@ -18,11 +41,7 @@ export async function promptOrganizeIntoGroups(
         value: false as const,
       },
     ],
-    {
-      placeHolder: "Organize files into planned commit groups?",
-      title: "Planned Commit Groups",
-    }
-  );
+  });
 
   if (!choice) {
     return undefined;
@@ -32,17 +51,22 @@ export async function promptOrganizeIntoGroups(
     return [];
   }
 
-  return promptBuildGroups(entries);
+  return promptBuildGroups(entries, store, workspaceRoot, hints);
 }
 
 export async function promptBuildGroups(
-  entries: GitStatusEntry[]
+  entries: GitStatusEntry[],
+  store: SnapshotStore,
+  workspaceRoot: string,
+  hints: Map<string, FileSelectionHint>
 ): Promise<CreateSnapshotGroupInput[] | undefined> {
+  const ctx = buildReviewContext(entries, store, workspaceRoot, hints);
   const remaining = new Map(entries.map((e) => [e.path, e]));
   const groups: CreateSnapshotGroupInput[] = [];
 
   while (remaining.size > 0) {
-    const groupName = await vscode.window.showInputBox({
+    const groupName = await promptReviewableInputBox({
+      ctx,
       prompt: `${remaining.size} file(s) remaining — commit message for this group`,
       placeHolder: "e.g. fix: redirect after login",
       title: "New Group",
@@ -57,16 +81,14 @@ export async function promptBuildGroups(
       break;
     }
 
-    const fileItems = [...remaining.values()].map((entry) => ({
-      label: entry.path,
-      description: formatGitStatusLabel(entry.gitStatus),
-      entry,
-    }));
-
-    const picked = await vscode.window.showQuickPick(fileItems, {
-      canPickMany: true,
-      placeHolder: "Select files for this group",
+    const remainingEntries = [...remaining.values()];
+    const picked = await promptSelectGitFiles({
+      entries: remainingEntries,
+      hints,
+      store,
+      workspaceRoot,
       title: groupName.trim(),
+      placeHolder: "Select files for this group",
     });
 
     if (!picked || picked.length === 0) {
@@ -83,21 +105,22 @@ export async function promptBuildGroups(
 
     groups.push({
       name: groupName.trim(),
-      filePaths: picked.map((p) => p.entry.path),
+      filePaths: picked.map((entry) => entry.path),
     });
 
-    for (const item of picked) {
-      remaining.delete(item.entry.path);
+    for (const entry of picked) {
+      remaining.delete(entry.path);
     }
 
     if (remaining.size > 0) {
-      const next = await vscode.window.showQuickPick(
-        [
+      const next = await promptReviewableQuickPick({
+        ctx,
+        placeHolder: `${remaining.size} file(s) still unassigned`,
+        items: [
           { label: "Add another group", value: "more" as const },
           { label: "Done (leave remaining ungrouped)", value: "done" as const },
         ],
-        { placeHolder: `${remaining.size} file(s) still unassigned` }
-      );
+      });
       if (!next || next.value === "done") {
         break;
       }

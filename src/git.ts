@@ -1,7 +1,7 @@
 import { execFile } from "child_process";
 import * as fs from "fs";
 import { promisify } from "util";
-import { GitFileStatus, GitStatusEntry } from "./types";
+import { GitFileStatus, GitStatusEntry, SNAPSHOT_ONLY_GIT_STATUS } from "./types";
 import { normalizeRelativePath, workspaceFilePath } from "./pathUtils";
 
 const execFileAsync = promisify(execFile);
@@ -114,6 +114,10 @@ export async function getGitStatus(workspaceRoot: string): Promise<GitStatusEntr
 }
 
 export function formatGitStatusLabel(gitStatus: GitFileStatus): string {
+  if (gitStatus === SNAPSHOT_ONLY_GIT_STATUS) {
+    return "Not in Git status";
+  }
+
   switch (gitStatus) {
     case "??":
       return "Untracked";

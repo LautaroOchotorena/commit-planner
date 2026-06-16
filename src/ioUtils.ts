@@ -43,3 +43,27 @@ export async function writeJsonFile(filePath: string, data: unknown): Promise<vo
   await ensureDir(path.dirname(filePath));
   await fs.promises.writeFile(filePath, JSON.stringify(data, null, 2), "utf8");
 }
+
+export async function readFileBuffer(filePath: string): Promise<Buffer | undefined> {
+  if (!(await pathExists(filePath))) {
+    return undefined;
+  }
+  return fs.promises.readFile(filePath);
+}
+
+export function buffersEqual(a: Buffer, b: Buffer): boolean {
+  return a.length === b.length && a.equals(b);
+}
+
+export async function filesEqual(pathA: string, pathB: string): Promise<boolean> {
+  const [bufferA, bufferB] = await Promise.all([
+    readFileBuffer(pathA),
+    readFileBuffer(pathB),
+  ]);
+
+  if (bufferA === undefined || bufferB === undefined) {
+    return bufferA === undefined && bufferB === undefined;
+  }
+
+  return buffersEqual(bufferA, bufferB);
+}

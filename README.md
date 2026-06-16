@@ -8,6 +8,11 @@ You always commit and push manually.
 
 - Reads changed files from `git status --porcelain`
 - Lets you pick which files to save (modified, added, deleted, untracked, etc.)
+- Highlights files during selection: never saved before, or changed since the most recent planned commit that included them
+- Files from saved planned commits that no longer appear in `git status` are still offered for selection (e.g. after reverting a file to match HEAD while an older planned commit still holds a different version)
+- Color-coded dots in the file picker: green = never in a planned commit, orange = changed since a past planned commit, blue = in a past planned commit but clean vs Git
+- While configuring a planned commit, open or diff files from the picker without losing your place in the wizard
+- **Open File** and **Compare with Last Snapshot** toolbar buttons on every snapshot setup step (file selection, name, groups, and group assignment)
 - Stores exact file copies in internal storage (outside the repo by default)
 - Provides a **Commit Planner** side panel with colored **commit groups**
 - **Activate** a snapshot — backs up the current version of each snapshot file, then applies the saved copies (or deletions)

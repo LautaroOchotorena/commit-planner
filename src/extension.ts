@@ -1,9 +1,13 @@
 import * as fs from "fs";
 import * as path from "path";
 import * as vscode from "vscode";
-import { formatGitStatusLabel, getGitStatus, isGitRepository } from "./git";
+import { getGitStatus, isGitRepository } from "./git";
 import { stageGroupForCommit } from "./gitScm";
+import { computeFileSelectionHints, buildFileSelectionEntries } from "./fileSelectionHints";
+import { promptSelectGitFiles } from "./fileSelectionQuickPick";
 import { promptOrganizeIntoGroups } from "./grouping";
+import { openDiffWithSnapshotFile } from "./snapshotCompare";
+import { promptReviewableInputBox } from "./snapshotWizardReview";
 import { SnapshotStore } from "./snapshotStore";
 import {
   SnapshotTreeItem,
@@ -18,7 +22,6 @@ import {
   snapshotCreatedAtLabel,
   snapshotDisplayName,
   snapshotUsesGroups,
-  workspaceFilePath,
 } from "./utils";
 
 let store: SnapshotStore | undefined;
@@ -309,31 +312,33 @@ async function createSnapshot(): Promise<void> {
     return;
   }
 
-  const entries = await getGitStatus(root);
+  const gitEntries = await getGitStatus(root);
+  const entries = await buildFileSelectionEntries(store, root, gitEntries);
   if (entries.length === 0) {
-    vscode.window.showInformationMessage("No modified files found in the working tree.");
+    vscode.window.showInformationMessage(
+      "No modified files found in the working tree and no files from saved planned commits."
+    );
     return;
   }
 
-  const items = entries.map((entry) => ({
-    label: entry.path,
-    description: formatGitStatusLabel(entry.gitStatus),
-    detail: entry.exists ? "File exists on disk" : "File deleted on disk",
-    picked: true,
-    entry,
-  }));
+  const hints = await computeFileSelectionHints(store, root, entries);
 
-  const selected = await vscode.window.showQuickPick(items, {
-    canPickMany: true,
-    placeHolder: "Select files to include in this planned commit",
+  const selected = await promptSelectGitFiles({
+    entries,
+    hints,
+    store,
+    workspaceRoot: root,
     title: "Create Planned Commit",
+    placeHolder: "Select files to include in this planned commit",
+    defaultPickAll: true,
   });
 
   if (!selected || selected.length === 0) {
     return;
   }
 
-  const name = await vscode.window.showInputBox({
+  const name = await promptReviewableInputBox({
+    ctx: { entries: selected, hints, store, workspaceRoot: root },
     placeHolder: "Optional name (e.g. feature/auth refactor)",
     prompt: "Enter an optional name for this planned commit",
     title: "Planned Commit Name",
@@ -343,14 +348,14 @@ async function createSnapshot(): Promise<void> {
     return;
   }
 
-  const groupInputs = await promptOrganizeIntoGroups(selected.map((s) => s.entry));
+  const groupInputs = await promptOrganizeIntoGroups(selected, store, root, hints);
   if (groupInputs === undefined) {
     return;
   }
 
   try {
     const snapshot = await store.createSnapshot(
-      selected.map((s) => s.entry),
+      selected,
       name,
       groupInputs
     );
@@ -572,27 +577,8 @@ async function compareFileWithSnapshot(item?: SnapshotTreeItem): Promise<void> {
   }
 
   const { snapshot, file } = resolved;
-
-  if (file.state === "deleted") {
-    vscode.window.showWarningMessage(
-      "This file was deleted in the snapshot. There is no file content to compare."
-    );
-    return;
-  }
-
-  const snapshotPath = store.getSnapshotFileAbsolutePath(snapshot.id, file);
-  if (!snapshotPath || !fs.existsSync(snapshotPath)) {
-    vscode.window.showErrorMessage("Snapshot file content not found.");
-    return;
-  }
-
   const workspaceRoot = requireWorkspaceRoot();
-  const currentPath = workspaceFilePath(workspaceRoot, file.path);
-  const snapshotUri = vscode.Uri.file(snapshotPath);
-  const currentUri = vscode.Uri.file(currentPath);
-  const title = `${path.basename(file.path)} (Snapshot ↔ Current)`;
-
-  await vscode.commands.executeCommand("vscode.diff", snapshotUri, currentUri, title);
+  await openDiffWithSnapshotFile(store, workspaceRoot, snapshot, file);
 }
 
 async function addGroup(item?: SnapshotTreeItem): Promise<void> {
