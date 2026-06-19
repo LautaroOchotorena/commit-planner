@@ -1,5 +1,6 @@
 import * as vscode from "vscode";
 import { execGit, getGitStatus } from "./git";
+import { t } from "./nls";
 import { normalizeRelativePath, pathKey } from "./utils";
 
 interface GitInputBox {
@@ -70,13 +71,15 @@ export async function stageGroupForCommit(
   const repo = await getGitRepository(workspaceRoot);
   if (!repo) {
     throw new Error(
-      "Git extension is not available. Enable the built-in Git extension to stage files."
+      t(
+        "Git extension is not available. Enable the built-in Git extension to stage files."
+      )
     );
   }
 
   const normalizedPaths = [...new Set(filePaths.map((p) => normalizeRelativePath(p)))];
   if (normalizedPaths.length === 0) {
-    throw new Error("No files to stage.");
+    throw new Error(t("No files to stage."));
   }
 
   await vscode.commands.executeCommand("git.refresh").then(
@@ -102,11 +105,13 @@ export async function stageGroupForCommit(
 
   if (staged.length === 0) {
     const listed = normalizedPaths.slice(0, 5).join(", ");
-    const suffix = normalizedPaths.length > 5 ? ", ..." : "";
+    const suffix = normalizedPaths.length > 5 ? t(", ...") : "";
     throw new Error(
-      `No changes could be staged. ` +
-        `Make sure the planned commit is active and those files differ from HEAD. ` +
-        `Files: ${listed}${suffix}`
+      t(
+        "No changes could be staged. Make sure the planned commit is active and those files differ from HEAD. Files: {0}{1}",
+        listed,
+        suffix
+      )
     );
   }
 

@@ -6,7 +6,8 @@ import {
   SnapshotFile,
 } from "./types";
 import { GitStatusEntry } from "./types";
-import { copyFileSafe, deleteFileSafe, ensureDir, pathExists } from "./ioUtils";
+import { copyFileSafe, deleteFileSafe, ensureDir, isRegularFile, pathExists } from "./ioUtils";
+import { t } from "./nls";
 import {
   normalizeRelativePath,
   pathToStorageKey,
@@ -25,6 +26,12 @@ export async function backupWorkspacePath(
   const storageKey = pathToStorageKey(normalized);
 
   if (await pathExists(workspacePath)) {
+    if (!(await isRegularFile(workspacePath))) {
+      return {
+        path: normalized,
+        stateBeforeActivation: "missing",
+      };
+    }
     const backupPath = path.join(runtimeFilesDir, storageKey);
     await copyFileSafe(workspacePath, backupPath);
     return {
@@ -125,6 +132,14 @@ export async function buildSnapshotFiles(
     const storageKey = pathToStorageKey(relativePath);
 
     if (entry.exists && (await pathExists(absolutePath))) {
+      if (!(await isRegularFile(absolutePath))) {
+        throw new Error(
+          t(
+            'Cannot snapshot "{0}": directories are not supported. Select individual files instead.',
+            relativePath
+          )
+        );
+      }
       const destPath = path.join(filesDir, storageKey);
       await copyFileSafe(absolutePath, destPath);
       snapshotFiles.push({

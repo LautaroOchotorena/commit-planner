@@ -4,6 +4,7 @@ import {
   getFileSelectionHintIconPath,
 } from "./fileSelectionHintVisuals";
 import { formatGitStatusLabel } from "./git";
+import { t } from "./nls";
 import { openDiffWithMostRecentSnapshot } from "./snapshotCompare";
 import { SnapshotStore } from "./snapshotStore";
 import { FileSelectionHint, GitStatusEntry } from "./types";
@@ -16,20 +17,24 @@ export interface SnapshotReviewContext {
   workspaceRoot: string;
 }
 
-export const OPEN_FILE_BUTTON: vscode.QuickInputButton = {
-  iconPath: new vscode.ThemeIcon("file"),
-  tooltip: "Open File",
+export type ReviewQuickInputButton = vscode.QuickInputButton & {
+  reviewAction: "open" | "compare";
 };
 
-export const COMPARE_BUTTON: vscode.QuickInputButton = {
-  iconPath: new vscode.ThemeIcon("diff"),
-  tooltip: "Compare with Last Snapshot",
-};
-
-export const REVIEW_BUTTONS: vscode.QuickInputButton[] = [
-  OPEN_FILE_BUTTON,
-  COMPARE_BUTTON,
-];
+function createReviewButtons(): ReviewQuickInputButton[] {
+  return [
+    {
+      iconPath: new vscode.ThemeIcon("file"),
+      tooltip: t("Open File"),
+      reviewAction: "open",
+    },
+    {
+      iconPath: new vscode.ThemeIcon("diff"),
+      tooltip: t("Compare with Last Snapshot"),
+      reviewAction: "compare",
+    },
+  ];
+}
 
 export async function openWorkspaceFileForReview(
   workspaceRoot: string,
@@ -37,7 +42,7 @@ export async function openWorkspaceFileForReview(
 ): Promise<void> {
   if (!entry.exists) {
     vscode.window.showWarningMessage(
-      `"${entry.path}" is deleted on disk. There is no file to open.`
+      t('"{0}" is deleted on disk. There is no file to open.', entry.path)
     );
     return;
   }
@@ -58,7 +63,7 @@ async function promptPickEntryForReview(
   ctx: SnapshotReviewContext
 ): Promise<GitStatusEntry | undefined> {
   if (ctx.entries.length === 0) {
-    vscode.window.showInformationMessage("No files available to review.");
+    vscode.window.showInformationMessage(t("No files available to review."));
     return undefined;
   }
 
@@ -69,7 +74,9 @@ async function promptPickEntryForReview(
   const items: ReviewEntryQuickPickItem[] = ctx.entries.map((entry) => {
     const hint = ctx.hints.get(entry.path);
     const hintDetail = formatFileSelectionHintDetail(hint);
-    const existenceDetail = entry.exists ? "File exists on disk" : "File deleted on disk";
+    const existenceDetail = entry.exists
+      ? t("File exists on disk")
+      : t("File deleted on disk");
 
     return {
       label: entry.path,
@@ -81,8 +88,8 @@ async function promptPickEntryForReview(
   });
 
   const picked = await vscode.window.showQuickPick(items, {
-    placeHolder: "Select a file to review",
-    title: "Review File",
+    placeHolder: t("Select a file to review"),
+    title: t("Review File"),
     ignoreFocusOut: true,
   });
 
@@ -99,12 +106,14 @@ export async function handleReviewButton(
     return;
   }
 
-  if (button === OPEN_FILE_BUTTON) {
+  const reviewAction = (button as ReviewQuickInputButton).reviewAction;
+
+  if (reviewAction === "open") {
     await openWorkspaceFileForReview(ctx.workspaceRoot, target);
     return;
   }
 
-  if (button === COMPARE_BUTTON) {
+  if (reviewAction === "compare") {
     await openDiffWithMostRecentSnapshot(
       ctx.store,
       ctx.workspaceRoot,
@@ -120,7 +129,7 @@ export function attachReviewButtons(
   getActiveEntry?: () => GitStatusEntry | undefined
 ): void {
   quickInput.ignoreFocusOut = true;
-  quickInput.buttons = REVIEW_BUTTONS;
+  quickInput.buttons = createReviewButtons();
   quickInput.onDidTriggerButton(async (button) => {
     await handleReviewButton(button, ctx, getActiveEntry?.());
   });

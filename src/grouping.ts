@@ -1,5 +1,6 @@
 import * as vscode from "vscode";
 import { promptSelectGitFiles } from "./fileSelectionQuickPick";
+import { t } from "./nls";
 import {
   promptReviewableInputBox,
   promptReviewableQuickPick,
@@ -27,17 +28,19 @@ export async function promptOrganizeIntoGroups(
 
   const choice = await promptReviewableQuickPick({
     ctx,
-    title: "Planned Commit Groups",
-    placeHolder: "Organize files into planned commit groups?",
+    title: t("Planned Commit Groups"),
+    placeHolder: t("Organize files into planned commit groups?"),
     items: [
       {
-        label: "Yes, create groups",
-        description: "Each group name becomes the commit message when staging in Source Control",
+        label: t("Yes, create groups"),
+        description: t(
+          "Each group name becomes the commit message when staging in Source Control"
+        ),
         value: true as const,
       },
       {
-        label: "No, flat list",
-        description: "Show all files without groups",
+        label: t("No, flat list"),
+        description: t("Show all files without groups"),
         value: false as const,
       },
     ],
@@ -67,11 +70,11 @@ export async function promptBuildGroups(
   while (remaining.size > 0) {
     const groupName = await promptReviewableInputBox({
       ctx,
-      prompt: `${remaining.size} file(s) remaining — commit message for this group`,
-      placeHolder: "e.g. fix: redirect after login",
-      title: "New Group",
+      prompt: t("{0} file(s) remaining — commit message for this group", remaining.size),
+      placeHolder: t("e.g. fix: redirect after login"),
+      title: t("New Group"),
       validateInput: (value) =>
-        value.trim().length === 0 ? "Group name is required" : undefined,
+        value.trim().length === 0 ? t("Group name is required") : undefined,
     });
 
     if (!groupName) {
@@ -88,16 +91,18 @@ export async function promptBuildGroups(
       store,
       workspaceRoot,
       title: groupName.trim(),
-      placeHolder: "Select files for this group",
+      placeHolder: t("Select files for this group"),
     });
 
     if (!picked || picked.length === 0) {
+      const tryAgain = t("Try Again");
+      const cancelGrouping = t("Cancel Grouping");
       const skip = await vscode.window.showWarningMessage(
-        "No files selected for this group.",
-        "Try Again",
-        "Cancel Grouping"
+        t("No files selected for this group."),
+        tryAgain,
+        cancelGrouping
       );
-      if (skip === "Cancel Grouping") {
+      if (skip === cancelGrouping) {
         return groups.length > 0 ? groups : undefined;
       }
       continue;
@@ -115,10 +120,10 @@ export async function promptBuildGroups(
     if (remaining.size > 0) {
       const next = await promptReviewableQuickPick({
         ctx,
-        placeHolder: `${remaining.size} file(s) still unassigned`,
+        placeHolder: t("{0} file(s) still unassigned", remaining.size),
         items: [
-          { label: "Add another group", value: "more" as const },
-          { label: "Done (leave remaining ungrouped)", value: "done" as const },
+          { label: t("Add another group"), value: "more" as const },
+          { label: t("Done (leave remaining ungrouped)"), value: "done" as const },
         ],
       });
       if (!next || next.value === "done") {

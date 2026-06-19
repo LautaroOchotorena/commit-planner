@@ -19,6 +19,8 @@ import {
   SnapshotGroup,
   SnapshotsIndex,
 } from "./types";
+import { pruneEmptyGroups, SnapshotRemovalResult } from "./snapshotRemoval";
+import { t } from "./nls";
 import {
   deleteDirSafe,
   deleteFileSafe,
@@ -64,7 +66,7 @@ export class SnapshotStore {
     }
 
     if (!this.context.storageUri) {
-      throw new Error("Workspace storage is not available.");
+      throw new Error(t("Workspace storage is not available."));
     }
     return this.context.storageUri.fsPath;
   }
@@ -237,7 +239,7 @@ export class SnapshotStore {
   async renameSnapshot(snapshotId: string, newName: string): Promise<void> {
     const snapshot = await this.getSnapshot(snapshotId);
     if (!snapshot) {
-      throw new Error(`Snapshot not found: ${snapshotId}`);
+      throw new Error(t("Snapshot not found: {0}", snapshotId));
     }
     snapshot.name = newName.trim() || undefined;
     await this.saveSnapshot(snapshot);
@@ -246,7 +248,7 @@ export class SnapshotStore {
   async addGroup(snapshotId: string, name: string): Promise<SnapshotGroup> {
     const snapshot = await this.getSnapshot(snapshotId);
     if (!snapshot) {
-      throw new Error(`Snapshot not found: ${snapshotId}`);
+      throw new Error(t("Snapshot not found: {0}", snapshotId));
     }
 
     const group: SnapshotGroup = {
@@ -265,22 +267,46 @@ export class SnapshotStore {
   async renameGroup(snapshotId: string, groupId: string, newName: string): Promise<void> {
     const snapshot = await this.getSnapshot(snapshotId);
     if (!snapshot) {
-      throw new Error(`Snapshot not found: ${snapshotId}`);
+      throw new Error(t("Snapshot not found: {0}", snapshotId));
     }
 
     const group = snapshot.groups?.find((g) => g.id === groupId);
     if (!group) {
-      throw new Error(`Group not found: ${groupId}`);
+      throw new Error(t("Group not found: {0}", groupId));
     }
 
     group.name = newName.trim();
     await this.saveSnapshot(snapshot);
   }
 
-  async deleteGroup(snapshotId: string, groupId: string): Promise<void> {
+  private async assertSnapshotNotActive(snapshotId: string): Promise<void> {
+    const active = await this.getActiveSnapshotState();
+    if (active?.snapshotId === snapshotId) {
+      throw new Error(t("Cannot modify the active snapshot. Deactivate it first."));
+    }
+  }
+
+  private async deleteSnapshotFileFromDisk(
+    snapshotId: string,
+    file: SnapshotFile
+  ): Promise<void> {
+    if (file.state !== "exists" || !file.snapshotRelativePath) {
+      return;
+    }
+
+    const absolutePath = path.join(this.snapshotDir(snapshotId), file.snapshotRelativePath);
+    await deleteFileSafe(absolutePath);
+  }
+
+  async undoGroup(snapshotId: string, groupId: string): Promise<void> {
     const snapshot = await this.getSnapshot(snapshotId);
     if (!snapshot) {
-      throw new Error(`Snapshot not found: ${snapshotId}`);
+      throw new Error(t("Snapshot not found: {0}", snapshotId));
+    }
+
+    const group = snapshot.groups?.find((g) => g.id === groupId);
+    if (!group) {
+      throw new Error(t("Group not found: {0}", groupId));
     }
 
     snapshot.groups = (snapshot.groups ?? []).filter((g) => g.id !== groupId);
@@ -293,6 +319,91 @@ export class SnapshotStore {
     await this.saveSnapshot(snapshot);
   }
 
+  async removeFileFromSnapshot(
+    snapshotId: string,
+    filePath: string
+  ): Promise<SnapshotRemovalResult> {
+    return this.removeFilesFromSnapshot(snapshotId, [filePath]);
+  }
+
+  async removeFilesFromSnapshot(
+    snapshotId: string,
+    filePaths: string[]
+  ): Promise<SnapshotRemovalResult> {
+    await this.assertSnapshotNotActive(snapshotId);
+
+    const snapshot = await this.getSnapshot(snapshotId);
+    if (!snapshot) {
+      throw new Error(t("Snapshot not found: {0}", snapshotId));
+    }
+
+    const normalizedPaths = new Set(filePaths.map((p) => normalizeRelativePath(p)));
+    const filesToRemove = snapshot.files.filter((f) =>
+      normalizedPaths.has(normalizeRelativePath(f.path))
+    );
+
+    if (filesToRemove.length === 0) {
+      throw new Error(t("No matching files found in snapshot."));
+    }
+
+    for (const file of filesToRemove) {
+      await this.deleteSnapshotFileFromDisk(snapshotId, file);
+    }
+
+    snapshot.files = snapshot.files.filter(
+      (f) => !normalizedPaths.has(normalizeRelativePath(f.path))
+    );
+    pruneEmptyGroups(snapshot);
+
+    if (snapshot.files.length === 0) {
+      await this.deleteSnapshot(snapshotId);
+      return { snapshotDeleted: true };
+    }
+
+    await this.saveSnapshot(snapshot);
+    return { snapshotDeleted: false };
+  }
+
+  async deleteGroupAndFiles(
+    snapshotId: string,
+    groupId: string
+  ): Promise<SnapshotRemovalResult> {
+    await this.assertSnapshotNotActive(snapshotId);
+
+    const snapshot = await this.getSnapshot(snapshotId);
+    if (!snapshot) {
+      throw new Error(t("Snapshot not found: {0}", snapshotId));
+    }
+
+    const group = snapshot.groups?.find((g) => g.id === groupId);
+    if (!group) {
+      throw new Error(t("Group not found: {0}", groupId));
+    }
+
+    const filesToRemove = snapshot.files.filter((f) => f.groupId === groupId);
+
+    for (const file of filesToRemove) {
+      await this.deleteSnapshotFileFromDisk(snapshotId, file);
+    }
+
+    const removePaths = new Set(
+      filesToRemove.map((f) => normalizeRelativePath(f.path))
+    );
+    snapshot.files = snapshot.files.filter(
+      (f) => !removePaths.has(normalizeRelativePath(f.path))
+    );
+    snapshot.groups = (snapshot.groups ?? []).filter((g) => g.id !== groupId);
+    pruneEmptyGroups(snapshot);
+
+    if (snapshot.files.length === 0) {
+      await this.deleteSnapshot(snapshotId);
+      return { snapshotDeleted: true };
+    }
+
+    await this.saveSnapshot(snapshot);
+    return { snapshotDeleted: false };
+  }
+
   async assignFileToGroup(
     snapshotId: string,
     filePath: string,
@@ -300,19 +411,19 @@ export class SnapshotStore {
   ): Promise<void> {
     const snapshot = await this.getSnapshot(snapshotId);
     if (!snapshot) {
-      throw new Error(`Snapshot not found: ${snapshotId}`);
+      throw new Error(t("Snapshot not found: {0}", snapshotId));
     }
 
     const normalized = normalizeRelativePath(filePath);
     const file = snapshot.files.find((f) => normalizeRelativePath(f.path) === normalized);
     if (!file) {
-      throw new Error(`File not found in snapshot: ${filePath}`);
+      throw new Error(t("File not found in snapshot: {0}", filePath));
     }
 
     if (groupId) {
       const group = snapshot.groups?.find((g) => g.id === groupId);
       if (!group) {
-        throw new Error(`Group not found: ${groupId}`);
+        throw new Error(t("Group not found: {0}", groupId));
       }
       file.groupId = groupId;
     } else {
@@ -335,7 +446,7 @@ export class SnapshotStore {
   async deleteSnapshot(snapshotId: string): Promise<void> {
     const active = await this.getActiveSnapshotState();
     if (active?.snapshotId === snapshotId) {
-      throw new Error("Cannot delete the active snapshot. Deactivate it first.");
+      throw new Error(t("Cannot delete the active snapshot. Deactivate it first."));
     }
 
     await deleteDirSafe(this.snapshotDir(snapshotId));
@@ -352,12 +463,14 @@ export class SnapshotStore {
 
   async activateSnapshot(snapshotId: string): Promise<ApplySnapshotStateResult> {
     if (await this.hasActiveSnapshot()) {
-      throw new Error("A snapshot is already active. Deactivate it before activating another.");
+      throw new Error(
+        t("A snapshot is already active. Deactivate it before activating another.")
+      );
     }
 
     const snapshot = await this.getSnapshot(snapshotId);
     if (!snapshot) {
-      throw new Error(`Snapshot not found: ${snapshotId}`);
+      throw new Error(t("Snapshot not found: {0}", snapshotId));
     }
 
     const workspaceRoot = requireWorkspaceRoot();
@@ -366,21 +479,30 @@ export class SnapshotStore {
       normalizeWorkspaceRoot(snapshot.workspaceRoot) !== normalizeWorkspaceRoot(workspaceRoot)
     ) {
       throw new Error(
-        `This planned commit belongs to workspace "${snapshot.workspaceRoot}". Open that folder to activate it.`
+        t(
+          'This planned commit belongs to workspace "{0}". Open that folder to activate it.',
+          snapshot.workspaceRoot
+        )
       );
     }
 
     const currentBranch = await getCurrentBranch(workspaceRoot);
     if (snapshot.branch && currentBranch && snapshot.branch !== currentBranch) {
       throw new Error(
-        `Cannot activate: created on branch "${snapshot.branch}", current branch is "${currentBranch}".`
+        t(
+          'Cannot activate: created on branch "{0}", current branch is "{1}".',
+          snapshot.branch,
+          currentBranch
+        )
       );
     }
 
     if (getConfig("blockActivationWithStagedChanges", true)) {
       if (await hasStagedChanges(workspaceRoot)) {
         throw new Error(
-          "Cannot activate snapshot while there are staged changes. Unstage them first or disable 'blockActivationWithStagedChanges'."
+          t(
+            "Cannot activate snapshot while there are staged changes. Unstage them first or disable 'blockActivationWithStagedChanges'."
+          )
         );
       }
     }
@@ -414,7 +536,7 @@ export class SnapshotStore {
   async deactivateActiveSnapshot(): Promise<void> {
     const active = await this.getActiveSnapshotState();
     if (!active) {
-      throw new Error("No active snapshot to deactivate.");
+      throw new Error(t("No active snapshot to deactivate."));
     }
     await this.deactivateActiveSnapshotInternal();
   }

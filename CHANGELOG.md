@@ -5,6 +5,28 @@ All notable changes to the **Commit Planner** extension are documented in this f
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.4] - 2026-06-18
+
+### Added
+
+- **Remove from Planned Commit** — remove individual files from a saved snapshot (with confirmation)
+- **Delete Group and Files** — remove a group and all of its files from a snapshot (with confirmation)
+- Empty groups are removed automatically when they no longer contain files
+- Removing the last file from a snapshot deletes the entire planned commit
+- Confirmations explain the effect for normal files and for planned deletions (`state: deleted`)
+- **English and Spanish localization** — UI strings follow VS Code display language (`en` / `es`)
+- Manifest strings via `package.nls.json` and `package.nls.es.json`
+- Runtime strings via `vscode.l10n` (`l10n/bundle.l10n.json`, `l10n/bundle.l10n.es.json`)
+
+### Changed
+
+- **Delete Group** renamed to **Undo Group** (`commitPlanner.undoGroup`) — ungroups files without removing them from the snapshot; no confirmation dialog
+
+### Fixed
+
+- Extension failed to activate (commands not found) because runtime localization used `@vscode/l10n`, which is excluded from the packaged extension; now uses built-in `vscode.l10n.t`
+- Creating a planned commit failed with `EPERM` when an untracked directory (e.g. `l10n/`) was selected — directories are now excluded; individual files inside untracked folders are listed via `git status -uall`
+
 ## [0.1.1] - 2026-06-14
 
 ### Added
@@ -55,5 +77,6 @@ Initial release.
 - MVP supports a single workspace folder
 - Git renames are treated as delete + add
 
+[0.1.4]: https://github.com/LautaroOchotorena/commit-planner/releases/tag/v0.1.4
 [0.1.1]: https://github.com/LautaroOchotorena/commit-planner/releases/tag/v0.1.1
 [0.1.0]: https://github.com/LautaroOchotorena/commit-planner/releases/tag/v0.1.0

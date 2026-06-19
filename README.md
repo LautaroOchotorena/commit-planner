@@ -83,7 +83,9 @@ Recommended flow: activate → stage → commit → push → deactivate to get y
 | Open Snapshot File | `commitPlanner.openSnapshotFile` |
 | Add Group | `commitPlanner.addGroup` |
 | Rename Group | `commitPlanner.renameGroup` |
-| Delete Group | `commitPlanner.deleteGroup` |
+| Undo Group | `commitPlanner.undoGroup` |
+| Delete Group and Files | `commitPlanner.deleteGroupAndFiles` |
+| Remove from Planned Commit | `commitPlanner.removeFileFromSnapshot` |
 | Move to Group | `commitPlanner.assignFileToGroup` |
 | Add Files to Group | `commitPlanner.addFilesToGroup` |
 
@@ -94,6 +96,9 @@ Within each planned commit you can organize files into **commit groups**:
 - **Group name** = commit message used in Source Control when staging
 - Each group has a distinct **color in the Commit Planner panel only** (not in the file Explorer)
 - **Stage Group for Commit** (inline button on a group): runs `git add` on the group's changed files, sets the SCM input to the group name, and focuses Source Control
+- **Undo Group** — removes the group and moves its files to Ungrouped (files stay in the planned commit)
+- **Delete Group and Files** — removes the group and its files from the planned commit (blocked while active)
+- **Remove from Planned Commit** on a file — removes that file from the snapshot (blocked while active)
 - **Ungrouped** node: stages ungrouped files with an empty commit message
 - Only files with current working-tree changes are staged; unchanged paths are skipped
 
@@ -103,6 +108,10 @@ Within each planned commit you can organize files into **commit groups**:
 |---------|---------|-------------|
 | `commitPlanner.storageLocation` | `workspaceStorage` | `workspaceStorage` (VS Code storage, outside repo) or `insideWorkspace` (`.commit-planner/`) |
 | `commitPlanner.blockActivationWithStagedChanges` | `true` | Block activation when staged changes exist |
+
+## Language
+
+The extension UI (commands, messages, tree labels, confirmations) is available in **English** and **Spanish**. It follows your VS Code display language (`Configure Display Language` → `es` for Spanish). Commit group names and file paths you enter are not translated.
 
 ## Status bar
 

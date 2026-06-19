@@ -1,4 +1,4 @@
-import { filesEqual, pathExists } from "./ioUtils";
+import { filesEqual, isDirectory, isRegularFile, pathExists } from "./ioUtils";
 import { normalizeRelativePath, pathKey, workspaceFilePath } from "./pathUtils";
 import { SnapshotStore } from "./snapshotStore";
 import {
@@ -8,6 +8,7 @@ import {
   Snapshot,
   SnapshotFile,
 } from "./types";
+import { t } from "./nls";
 
 function formatSnapshotReferenceDate(isoDate: string): string {
   try {
@@ -76,7 +77,7 @@ export function formatFileSelectionHintDetail(hint: FileSelectionHint | undefine
   }
 
   if (hint.mark === "never_snapshotted") {
-    return "Never in a planned commit";
+    return t("Never in a planned commit");
   }
 
   if (hint.mark === "in_past_snapshot") {
@@ -84,17 +85,17 @@ export function formatFileSelectionHintDetail(hint: FileSelectionHint | undefine
       ? `"${hint.snapshotName.trim()}"`
       : hint.snapshotCreatedAt
         ? formatSnapshotReferenceDate(hint.snapshotCreatedAt)
-        : "a past planned commit";
-    return `In ${snapshotLabel} (not in Git status)`;
+        : t("a past planned commit");
+    return t("In {0} (not in Git status)", snapshotLabel);
   }
 
   const snapshotLabel = hint.snapshotName?.trim()
     ? `"${hint.snapshotName.trim()}"`
     : hint.snapshotCreatedAt
       ? formatSnapshotReferenceDate(hint.snapshotCreatedAt)
-      : "last planned commit";
+      : t("last planned commit");
 
-  return `Changed since ${snapshotLabel}`;
+  return t("Changed since {0}", snapshotLabel);
 }
 
 function hintSortRank(hint: FileSelectionHint | undefined): number {
@@ -144,7 +145,10 @@ export async function mergeGitAndSnapshotEntries(
 
     const normalizedPath = normalizeRelativePath(ref.file.path);
     const absolutePath = workspaceFilePath(workspaceRoot, normalizedPath);
-    const exists = await pathExists(absolutePath);
+    if (await isDirectory(absolutePath)) {
+      continue;
+    }
+    const exists = await isRegularFile(absolutePath);
 
     byPathKey.set(key, {
       path: normalizedPath,

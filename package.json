@@ -1,9 +1,10 @@
 {
   "name": "commit-planner",
-  "displayName": "Commit Planner",
-  "description": "Save planned commits as snapshots of selected working tree files. Activate to swap files temporarily, organize into colored groups, and stage each group for commit when ready.",
-  "version": "0.1.1",
+  "displayName": "%displayName%",
+  "description": "%description%",
+  "version": "0.1.4",
   "icon": "icon.png",
+  "l10n": "./l10n",
   "engines": {
     "vscode": "^1.74.0"
   },
@@ -23,7 +24,12 @@
     "staging",
     "groups"
   ],
-  "activationEvents": [],
+  "activationEvents": [
+    "onView:commitPlanner.snapshots",
+    "onCommand:commitPlanner.createSnapshot",
+    "onCommand:commitPlanner.listSnapshots",
+    "onCommand:commitPlanner.deactivateSnapshot"
+  ],
   "extensionDependencies": [
     "vscode.git"
   ],
@@ -32,90 +38,102 @@
     "commands": [
       {
         "command": "commitPlanner.createSnapshot",
-        "title": "Create Planned Commit",
-        "category": "Commit Planner",
+        "title": "%command.createSnapshot.title%",
+        "category": "%command.category%",
         "icon": "$(save)"
       },
       {
         "command": "commitPlanner.listSnapshots",
-        "title": "List Planned Commits",
-        "category": "Commit Planner"
+        "title": "%command.listSnapshots.title%",
+        "category": "%command.category%"
       },
       {
         "command": "commitPlanner.activateSnapshot",
-        "title": "Activate",
-        "category": "Commit Planner",
+        "title": "%command.activateSnapshot.title%",
+        "category": "%command.category%",
         "icon": "$(play)"
       },
       {
         "command": "commitPlanner.deactivateSnapshot",
-        "title": "Deactivate",
-        "category": "Commit Planner",
+        "title": "%command.deactivateSnapshot.title%",
+        "category": "%command.category%",
         "icon": "$(debug-step-out)"
       },
       {
         "command": "commitPlanner.deleteSnapshot",
-        "title": "Delete",
-        "category": "Commit Planner",
+        "title": "%command.deleteSnapshot.title%",
+        "category": "%command.category%",
         "icon": "$(trash)"
       },
       {
         "command": "commitPlanner.renameSnapshot",
-        "title": "Rename",
-        "category": "Commit Planner",
+        "title": "%command.renameSnapshot.title%",
+        "category": "%command.category%",
         "icon": "$(edit)"
       },
       {
         "command": "commitPlanner.compareFileWithSnapshot",
-        "title": "Compare File With Snapshot",
-        "category": "Commit Planner",
+        "title": "%command.compareFileWithSnapshot.title%",
+        "category": "%command.category%",
         "icon": "$(diff)"
       },
       {
         "command": "commitPlanner.openSnapshotFile",
-        "title": "Open Snapshot File",
-        "category": "Commit Planner",
+        "title": "%command.openSnapshotFile.title%",
+        "category": "%command.category%",
         "icon": "$(file)"
       },
       {
         "command": "commitPlanner.refresh",
-        "title": "Refresh",
+        "title": "%command.refresh.title%",
         "icon": "$(refresh)"
       },
       {
         "command": "commitPlanner.addGroup",
-        "title": "Add Group",
-        "category": "Commit Planner",
+        "title": "%command.addGroup.title%",
+        "category": "%command.category%",
         "icon": "$(git-commit)"
       },
       {
         "command": "commitPlanner.renameGroup",
-        "title": "Rename Group",
-        "category": "Commit Planner",
+        "title": "%command.renameGroup.title%",
+        "category": "%command.category%",
         "icon": "$(edit)"
       },
       {
-        "command": "commitPlanner.deleteGroup",
-        "title": "Delete Group",
-        "category": "Commit Planner",
+        "command": "commitPlanner.undoGroup",
+        "title": "%command.undoGroup.title%",
+        "category": "%command.category%",
+        "icon": "$(discard)"
+      },
+      {
+        "command": "commitPlanner.deleteGroupAndFiles",
+        "title": "%command.deleteGroupAndFiles.title%",
+        "category": "%command.category%",
         "icon": "$(trash)"
       },
       {
+        "command": "commitPlanner.removeFileFromSnapshot",
+        "title": "%command.removeFileFromSnapshot.title%",
+        "category": "%command.category%",
+        "icon": "$(close)"
+      },
+      {
         "command": "commitPlanner.assignFileToGroup",
-        "title": "Move to Group",
-        "category": "Commit Planner",
+        "title": "%command.assignFileToGroup.title%",
+        "category": "%command.category%",
         "icon": "$(arrow-right)"
       },
       {
         "command": "commitPlanner.addFilesToGroup",
-        "title": "Add Files to Group",
-        "category": "Commit Planner",
+        "title": "%command.addFilesToGroup.title%",
+        "category": "%command.category%",
         "icon": "$(add)"
       },
       {
         "command": "commitPlanner.stageGroupForCommit",
-        "title": "Stage Group for Commit",
-        "category": "Commit Planner",
+        "title": "%command.stageGroupForCommit.title%",
+        "category": "%command.category%",
         "icon": "$(git-stash-apply)"
       }
     ],
@@ -123,9 +141,9 @@
       "explorer": [
         {
           "id": "commitPlanner.snapshots",
-          "name": "Commit Planner",
+          "name": "%view.snapshots.name%",
           "icon": "$(git-commit)",
-          "contextualTitle": "Commit Planner"
+          "contextualTitle": "%view.snapshots.contextualTitle%"
         }
       ]
     },
@@ -209,14 +227,19 @@
           "group": "1_actions@1"
         },
         {
-          "command": "commitPlanner.deleteGroup",
+          "command": "commitPlanner.undoGroup",
           "when": "view == commitPlanner.snapshots && viewItem == snapshotGroup",
           "group": "1_actions@2"
         },
         {
-          "command": "commitPlanner.addFilesToGroup",
+          "command": "commitPlanner.deleteGroupAndFiles",
           "when": "view == commitPlanner.snapshots && viewItem == snapshotGroup",
           "group": "1_actions@3"
+        },
+        {
+          "command": "commitPlanner.addFilesToGroup",
+          "when": "view == commitPlanner.snapshots && viewItem == snapshotGroup",
+          "group": "1_actions@4"
         },
         {
           "command": "commitPlanner.assignFileToGroup",
@@ -247,6 +270,11 @@
           "command": "commitPlanner.assignFileToGroup",
           "when": "view == commitPlanner.snapshots && viewItem == snapshotFile",
           "group": "1_actions@3"
+        },
+        {
+          "command": "commitPlanner.removeFileFromSnapshot",
+          "when": "view == commitPlanner.snapshots && viewItem == snapshotFile",
+          "group": "1_actions@4"
         }
       ],
       "commandPalette": [
@@ -283,7 +311,15 @@
           "when": "false"
         },
         {
-          "command": "commitPlanner.deleteGroup",
+          "command": "commitPlanner.undoGroup",
+          "when": "false"
+        },
+        {
+          "command": "commitPlanner.deleteGroupAndFiles",
+          "when": "false"
+        },
+        {
+          "command": "commitPlanner.removeFileFromSnapshot",
           "when": "false"
         },
         {
@@ -305,7 +341,7 @@
       ]
     },
     "configuration": {
-      "title": "Commit Planner",
+      "title": "%config.title%",
       "properties": {
         "commitPlanner.storageLocation": {
           "type": "string",
@@ -313,13 +349,17 @@
             "workspaceStorage",
             "insideWorkspace"
           ],
+          "enumDescriptions": [
+            "%config.storageLocation.enumDescriptions.workspaceStorage%",
+            "%config.storageLocation.enumDescriptions.insideWorkspace%"
+          ],
           "default": "workspaceStorage",
-          "description": "Where to store snapshot data. 'workspaceStorage' uses VS Code's workspace storage (outside the repo). 'insideWorkspace' stores in .commit-planner/ at the workspace root."
+          "description": "%config.storageLocation.description%"
         },
         "commitPlanner.blockActivationWithStagedChanges": {
           "type": "boolean",
           "default": true,
-          "description": "Block snapshot activation when there are staged changes in Git."
+          "description": "%config.blockActivationWithStagedChanges.description%"
         }
       }
     }

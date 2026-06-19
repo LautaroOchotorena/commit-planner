@@ -12,6 +12,7 @@ import {
 } from "./snapshotWizardReview";
 import { SnapshotStore } from "./snapshotStore";
 import { FileSelectionHint, GitStatusEntry } from "./types";
+import { t } from "./nls";
 
 interface GitFileQuickPickItem extends vscode.QuickPickItem {
   entry: GitStatusEntry;
@@ -36,7 +37,9 @@ function buildQuickPickItems(
   return sortEntriesForSelection(entries, hints).map((entry) => {
     const hint = hints.get(entry.path);
     const hintDetail = formatFileSelectionHintDetail(hint);
-    const existenceDetail = entry.exists ? "File exists on disk" : "File deleted on disk";
+    const existenceDetail = entry.exists
+      ? t("File exists on disk")
+      : t("File deleted on disk");
 
     return {
       label: entry.path,

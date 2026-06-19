@@ -1,7 +1,8 @@
 import { execFile } from "child_process";
-import * as fs from "fs";
 import { promisify } from "util";
 import { GitFileStatus, GitStatusEntry, SNAPSHOT_ONLY_GIT_STATUS } from "./types";
+import { t } from "./nls";
+import { isDirectory, isRegularFile } from "./ioUtils";
 import { normalizeRelativePath, workspaceFilePath } from "./pathUtils";
 
 const execFileAsync = promisify(execFile);
@@ -85,7 +86,8 @@ function parsePorcelainLine(line: string): GitStatusEntry | undefined {
 }
 
 export async function getGitStatus(workspaceRoot: string): Promise<GitStatusEntry[]> {
-  const { stdout } = await execGit(workspaceRoot, ["status", "--porcelain"]);
+  // -uall: list individual untracked files inside directories (default is directory-only).
+  const { stdout } = await execGit(workspaceRoot, ["status", "--porcelain", "-uall"]);
   const entries: GitStatusEntry[] = [];
   const seen = new Set<string>();
 
@@ -100,13 +102,13 @@ export async function getGitStatus(workspaceRoot: string): Promise<GitStatusEntr
     seen.add(entry.path);
 
     const absolutePath = workspaceFilePath(workspaceRoot, entry.path);
-    try {
-      const stat = await fs.promises.stat(absolutePath);
-      entry.exists = stat.isFile() || stat.isDirectory();
-    } catch {
+    if (await isDirectory(absolutePath)) {
+      entry.isDirectory = true;
       entry.exists = false;
+      continue;
     }
 
+    entry.exists = await isRegularFile(absolutePath);
     entries.push(entry);
   }
 
@@ -115,22 +117,22 @@ export async function getGitStatus(workspaceRoot: string): Promise<GitStatusEntr
 
 export function formatGitStatusLabel(gitStatus: GitFileStatus): string {
   if (gitStatus === SNAPSHOT_ONLY_GIT_STATUS) {
-    return "Not in Git status";
+    return t("Not in Git status");
   }
 
   switch (gitStatus) {
     case "??":
-      return "Untracked";
+      return t("Untracked");
     case "M":
-      return "Modified";
+      return t("Modified");
     case "A":
-      return "Added";
+      return t("Added");
     case "D":
-      return "Deleted";
+      return t("Deleted");
     case "R":
-      return "Renamed";
+      return t("Renamed");
     case "U":
-      return "Unmerged";
+      return t("Unmerged");
     default:
       return gitStatus;
   }

@@ -1,13 +1,14 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import * as path from "path";
-import { createTempDir, writeWorkspaceFile } from "./helpers/gitRepo";
+import { commitAll, createTempDir, initGitRepo, writeWorkspaceFile } from "./helpers/gitRepo";
 
 const {
   buildMostRecentSnapshotFileIndex,
   mergeGitAndSnapshotEntries,
   workspaceDiffersFromSnapshotFile,
 } = require("../fileSelectionHints");
+const { getGitStatus } = require("../git");
 const { SNAPSHOT_ONLY_GIT_STATUS } = require("../types");
 
 describe("fileSelectionHints", () => {
@@ -153,5 +154,34 @@ describe("fileSelectionHints", () => {
 
     assert.equal(merged.length, 1);
     assert.equal(merged[0].gitStatus, "M");
+  });
+
+  it("getGitStatus skips directory lines and lists files inside untracked folders", async () => {
+    const workspaceRoot = await createTempDir("fc-workspace-");
+    await initGitRepo(workspaceRoot);
+    await writeWorkspaceFile(workspaceRoot, "tracked.ts", "ok");
+    await commitAll(workspaceRoot, "initial");
+    await writeWorkspaceFile(workspaceRoot, "changed.ts", "new");
+    await writeWorkspaceFile(workspaceRoot, "l10n/bundle.l10n.json", "{}");
+    await writeWorkspaceFile(workspaceRoot, "l10n/bundle.l10n.es.json", "{}");
+
+    const entries = await getGitStatus(workspaceRoot);
+
+    assert.equal(
+      entries.some((entry: { path: string }) => entry.path === "l10n"),
+      false
+    );
+    assert.equal(
+      entries.some((entry: { path: string }) => entry.path === "l10n/bundle.l10n.json"),
+      true
+    );
+    assert.equal(
+      entries.some((entry: { path: string }) => entry.path === "l10n/bundle.l10n.es.json"),
+      true
+    );
+    assert.equal(
+      entries.some((entry: { path: string }) => entry.path === "changed.ts"),
+      true
+    );
   });
 });

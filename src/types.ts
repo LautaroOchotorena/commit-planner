@@ -59,6 +59,7 @@ export interface GitStatusEntry {
   path: string;
   gitStatus: GitFileStatus;
   exists: boolean;
+  isDirectory?: boolean;
 }
 
 export interface FileSnapshotRef {

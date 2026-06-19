@@ -14,6 +14,22 @@ export async function pathExists(filePath: string): Promise<boolean> {
   }
 }
 
+export async function isRegularFile(filePath: string): Promise<boolean> {
+  try {
+    return (await fs.promises.stat(filePath)).isFile();
+  } catch {
+    return false;
+  }
+}
+
+export async function isDirectory(filePath: string): Promise<boolean> {
+  try {
+    return (await fs.promises.stat(filePath)).isDirectory();
+  } catch {
+    return false;
+  }
+}
+
 export async function copyFileSafe(source: string, destination: string): Promise<void> {
   await ensureDir(path.dirname(destination));
   await fs.promises.copyFile(source, destination);

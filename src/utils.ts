@@ -1,5 +1,6 @@
 import * as vscode from "vscode";
 import type { SnapshotGroup } from "./types";
+import { t } from "./nls";
 import {
   copyFileSafe,
   deleteDirSafe,
@@ -47,7 +48,7 @@ export function getWorkspaceRoot(): string | undefined {
 export function requireWorkspaceRoot(): string {
   const root = getWorkspaceRoot();
   if (!root) {
-    throw new Error("No workspace folder is open.");
+    throw new Error(t("No workspace folder is open."));
   }
   return root;
 }

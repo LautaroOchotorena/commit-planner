@@ -1,6 +1,7 @@
 import * as vscode from "vscode";
 import { formatGitStatusLabel } from "./git";
 import { getGroupThemeColor, getUngroupedThemeColor } from "./groupColors";
+import { t } from "./nls";
 import { SnapshotStore } from "./snapshotStore";
 import { Snapshot, SnapshotFile, SnapshotGroup } from "./types";
 import { formatDateTime, snapshotCreatedAtLabel, snapshotDisplayName, snapshotUsesGroups } from "./utils";
@@ -35,10 +36,10 @@ export class SnapshotTreeItem extends vscode.TreeItem {
       const createdLabel = snapshotCreatedAtLabel(snapshot);
       const fileSummary =
         groupCount > 0
-          ? `${snapshot.files.length} file(s), ${groupCount} group(s)`
-          : `${snapshot.files.length} file(s)`;
+          ? t("{0} file(s), {1} group(s)", snapshot.files.length, groupCount)
+          : t("{0} file(s)", snapshot.files.length);
       const baseDescription = `${createdLabel} — ${fileSummary}`;
-      this.description = isActiveSnapshot ? `${baseDescription} — Active` : baseDescription;
+      this.description = isActiveSnapshot ? `${baseDescription}${t(" — Active")}` : baseDescription;
       this.iconPath = isActiveSnapshot
         ? new vscode.ThemeIcon("check", new vscode.ThemeColor("charts.yellow"))
         : new vscode.ThemeIcon("history");
@@ -51,10 +52,10 @@ export class SnapshotTreeItem extends vscode.TreeItem {
       this.id = `snapshot:${snapshot.id}:group:${groupId}`;
 
       if (isUngrouped) {
-        this.tooltip = "Files not assigned to any group";
+        this.tooltip = t("Files not assigned to any group");
         this.iconPath = new vscode.ThemeIcon("folder", getUngroupedThemeColor());
       } else if (group) {
-        this.tooltip = `${group.name}\nCreated: ${formatDateTime(group.createdAt)}`;
+        this.tooltip = `${group.name}\n${t("Created: {0}", formatDateTime(group.createdAt))}`;
         this.iconPath = new vscode.ThemeIcon("git-commit", getGroupThemeColor(group.colorIndex));
       }
     }
@@ -83,12 +84,12 @@ export class SnapshotTreeItem extends vscode.TreeItem {
   private buildSnapshotTooltip(snapshot: Snapshot): string {
     const lines = [
       snapshotDisplayName(snapshot),
-      `Created: ${formatDateTime(snapshot.createdAt)}`,
-      `Branch: ${snapshot.branch || "(unknown)"}`,
-      `Files: ${snapshot.files.length}`,
+      t("Created: {0}", formatDateTime(snapshot.createdAt)),
+      t("Branch: {0}", snapshot.branch || t("(unknown)")),
+      t("Files: {0}", snapshot.files.length),
     ];
     if (snapshot.groups && snapshot.groups.length > 0) {
-      lines.push(`Groups: ${snapshot.groups.length}`);
+      lines.push(t("Groups: {0}", snapshot.groups.length));
     }
     return lines.join("\n");
   }
@@ -121,7 +122,7 @@ export class SnapshotTreeProvider
       const snapshots = await this.store.listSnapshots();
       if (snapshots.length === 0) {
         const empty = new SnapshotTreeItem(
-          "No planned commits yet",
+          t("No planned commits yet"),
           vscode.TreeItemCollapsibleState.None,
           "snapshotFile"
         );
@@ -178,13 +179,13 @@ export class SnapshotTreeProvider
         )
       );
       const groupItem = items[items.length - 1];
-      groupItem.description = `${fileCount} file(s)`;
+      groupItem.description = t("{0} file(s)", fileCount);
     }
 
     const ungrouped = snapshot.files.filter((f) => !f.groupId);
     if (ungrouped.length > 0) {
       const ungroupedItem = new SnapshotTreeItem(
-        "Ungrouped",
+        t("Ungrouped"),
         vscode.TreeItemCollapsibleState.Collapsed,
         "snapshotGroup",
         snapshot,
@@ -192,7 +193,7 @@ export class SnapshotTreeProvider
         undefined,
         true
       );
-      ungroupedItem.description = `${ungrouped.length} file(s)`;
+      ungroupedItem.description = t("{0} file(s)", ungrouped.length);
       items.push(ungroupedItem);
     }
 
