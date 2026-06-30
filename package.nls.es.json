@@ -18,6 +18,8 @@
   "command.compareFileWithSnapshot.title": "Comparar archivo con instantánea",
   "command.openSnapshotFile.title": "Abrir archivo de instantánea",
   "command.refresh.title": "Actualizar",
+  "command.searchSnapshotFiles.title": "Buscar archivos",
+  "command.clearSnapshotFileSearch.title": "Limpiar búsqueda de archivos",
   "command.addGroup.title": "Agregar grupo",
   "command.renameGroup.title": "Renombrar grupo",
   "command.undoGroup.title": "Deshacer grupo",

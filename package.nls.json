@@ -18,6 +18,8 @@
   "command.compareFileWithSnapshot.title": "Compare File With Snapshot",
   "command.openSnapshotFile.title": "Open Snapshot File",
   "command.refresh.title": "Refresh",
+  "command.searchSnapshotFiles.title": "Search Files",
+  "command.clearSnapshotFileSearch.title": "Clear File Search",
   "command.addGroup.title": "Add Group",
   "command.renameGroup.title": "Rename Group",
   "command.undoGroup.title": "Undo Group",

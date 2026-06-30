@@ -166,5 +166,9 @@
   "Delete group \"{0}\" and remove its files from this planned commit?": "Delete group \"{0}\" and remove its files from this planned commit?",
   "This group has no files. The empty group will be removed.": "This group has no files. The empty group will be removed.",
   "{0} file(s) will be removed from this planned commit.": "{0} file(s) will be removed from this planned commit.",
-  "Cannot snapshot \"{0}\": directories are not supported. Select individual files instead.": "Cannot snapshot \"{0}\": directories are not supported. Select individual files instead."
+  "Cannot snapshot \"{0}\": directories are not supported. Select individual files instead.": "Cannot snapshot \"{0}\": directories are not supported. Select individual files instead.",
+  "Filter by file name or path": "Filter by file name or path",
+  "Type to filter files across all planned commits": "Type to filter files across all planned commits",
+  "Filtering files: {0}": "Filtering files: {0}",
+  "No files match \"{0}\"": "No files match \"{0}\""
 }

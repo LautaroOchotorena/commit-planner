@@ -32,6 +32,7 @@ import {
 
 let store: SnapshotStore | undefined;
 let treeProvider: SnapshotTreeProvider | undefined;
+let snapshotsTreeView: vscode.TreeView<SnapshotTreeItem> | undefined;
 let statusBarItem: vscode.StatusBarItem | undefined;
 let bootstrapToken: vscode.CancellationTokenSource | undefined;
 let isDisposed = false;
@@ -49,6 +50,7 @@ export function activate(context: vscode.ExtensionContext): void {
     treeDataProvider: treeProvider,
     showCollapseAll: true,
   });
+  snapshotsTreeView = treeView;
   context.subscriptions.push(treeView, treeProvider);
 
   statusBarItem = vscode.window.createStatusBarItem(
@@ -89,6 +91,12 @@ export function activate(context: vscode.ExtensionContext): void {
       (item?: SnapshotTreeItem) => openSnapshotFile(item)
     ),
     vscode.commands.registerCommand("commitPlanner.refresh", () => refreshAll()),
+    vscode.commands.registerCommand("commitPlanner.searchSnapshotFiles", () =>
+      searchSnapshotFiles()
+    ),
+    vscode.commands.registerCommand("commitPlanner.clearSnapshotFileSearch", () =>
+      clearSnapshotFileSearch()
+    ),
     vscode.commands.registerCommand(
       "commitPlanner.addGroup",
       (item?: SnapshotTreeItem) => addGroup(item)
@@ -142,6 +150,7 @@ export function activate(context: vscode.ExtensionContext): void {
       bootstrapToken = undefined;
       store = undefined;
       treeProvider = undefined;
+      snapshotsTreeView = undefined;
       statusBarItem = undefined;
     },
   });
@@ -240,10 +249,62 @@ async function refreshAll(): Promise<void> {
   }
 
   treeProvider.refresh();
+  updateSnapshotsTreeMessage();
   if (isCancelled()) {
     return;
   }
   await updateStatusBar();
+}
+
+function updateSnapshotsTreeMessage(): void {
+  if (!snapshotsTreeView || !treeProvider) {
+    return;
+  }
+
+  const query = treeProvider.getFileSearchQuery();
+  snapshotsTreeView.message = query
+    ? t("Filtering files: {0}", query)
+    : undefined;
+}
+
+async function updateSnapshotFileSearchContext(): Promise<void> {
+  await vscode.commands.executeCommand(
+    "setContext",
+    "commitPlanner.snapshotFileSearchActive",
+    treeProvider?.isFilteringFiles() ?? false
+  );
+}
+
+async function searchSnapshotFiles(): Promise<void> {
+  if (!treeProvider) {
+    return;
+  }
+
+  const query = await vscode.window.showInputBox({
+    placeHolder: t("Filter by file name or path"),
+    prompt: t("Type to filter files across all planned commits"),
+    value: treeProvider.getFileSearchQuery() ?? "",
+  });
+
+  if (query === undefined) {
+    return;
+  }
+
+  treeProvider.setFileSearchQuery(query);
+  await updateSnapshotFileSearchContext();
+  treeProvider.refresh();
+  updateSnapshotsTreeMessage();
+}
+
+async function clearSnapshotFileSearch(): Promise<void> {
+  if (!treeProvider) {
+    return;
+  }
+
+  treeProvider.setFileSearchQuery(undefined);
+  await updateSnapshotFileSearchContext();
+  treeProvider.refresh();
+  updateSnapshotsTreeMessage();
 }
 
 async function updateStatusBar(): Promise<void> {

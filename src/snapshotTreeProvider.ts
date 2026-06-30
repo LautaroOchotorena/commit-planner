@@ -1,3 +1,4 @@
+import * as path from "path";
 import * as vscode from "vscode";
 import { formatGitStatusLabel } from "./git";
 import { getGroupThemeColor, getUngroupedThemeColor } from "./groupColors";
@@ -102,8 +103,37 @@ export class SnapshotTreeProvider
     SnapshotTreeItem | undefined
   >();
   readonly onDidChangeTreeData = this._onDidChangeTreeData.event;
+  private fileSearchQuery?: string;
 
   constructor(private readonly store: SnapshotStore) {}
+
+  getFileSearchQuery(): string | undefined {
+    return this.fileSearchQuery;
+  }
+
+  setFileSearchQuery(query: string | undefined): void {
+    const normalized = query?.trim();
+    this.fileSearchQuery = normalized && normalized.length > 0 ? normalized : undefined;
+  }
+
+  isFilteringFiles(): boolean {
+    return this.fileSearchQuery !== undefined;
+  }
+
+  private fileMatchesSearch(filePath: string): boolean {
+    if (!this.fileSearchQuery) {
+      return true;
+    }
+
+    const query = this.fileSearchQuery.toLowerCase();
+    const normalizedPath = filePath.replace(/\\/g, "/").toLowerCase();
+    const baseName = path.basename(normalizedPath).toLowerCase();
+    return normalizedPath.includes(query) || baseName.includes(query);
+  }
+
+  private snapshotHasMatchingFiles(snapshot: Snapshot): boolean {
+    return snapshot.files.some((file) => this.fileMatchesSearch(file.path));
+  }
 
   dispose(): void {
     this._onDidChangeTreeData.dispose();
@@ -130,13 +160,30 @@ export class SnapshotTreeProvider
         return [empty];
       }
 
-      const active = await this.store.getActiveSnapshotState();
+      const visibleSnapshots = this.isFilteringFiles()
+        ? snapshots.filter((snapshot) => this.snapshotHasMatchingFiles(snapshot))
+        : snapshots;
 
-      return snapshots.map(
+      if (visibleSnapshots.length === 0) {
+        const empty = new SnapshotTreeItem(
+          t("No files match \"{0}\"", this.fileSearchQuery ?? ""),
+          vscode.TreeItemCollapsibleState.None,
+          "snapshotFile"
+        );
+        empty.contextValue = "empty";
+        return [empty];
+      }
+
+      const active = await this.store.getActiveSnapshotState();
+      const snapshotCollapsibleState = this.isFilteringFiles()
+        ? vscode.TreeItemCollapsibleState.Expanded
+        : vscode.TreeItemCollapsibleState.Collapsed;
+
+      return visibleSnapshots.map(
         (snapshot) =>
           new SnapshotTreeItem(
             snapshotDisplayName(snapshot),
-            vscode.TreeItemCollapsibleState.Collapsed,
+            snapshotCollapsibleState,
             "snapshot",
             snapshot,
             undefined,
@@ -160,17 +207,28 @@ export class SnapshotTreeProvider
 
   private getSnapshotChildren(snapshot: Snapshot): SnapshotTreeItem[] {
     if (!snapshotUsesGroups(snapshot)) {
-      return snapshot.files.map((file) => this.createFileItem(snapshot, file));
+      return snapshot.files
+        .filter((file) => this.fileMatchesSearch(file.path))
+        .map((file) => this.createFileItem(snapshot, file));
     }
 
     const items: SnapshotTreeItem[] = [];
+    const groupCollapsibleState = this.isFilteringFiles()
+      ? vscode.TreeItemCollapsibleState.Expanded
+      : vscode.TreeItemCollapsibleState.Collapsed;
 
     for (const group of snapshot.groups ?? []) {
-      const fileCount = snapshot.files.filter((f) => f.groupId === group.id).length;
+      const groupFiles = snapshot.files.filter((f) => f.groupId === group.id);
+      const matchingFiles = groupFiles.filter((f) => this.fileMatchesSearch(f.path));
+      if (this.isFilteringFiles() && matchingFiles.length === 0) {
+        continue;
+      }
+
+      const fileCount = this.isFilteringFiles() ? matchingFiles.length : groupFiles.length;
       items.push(
         new SnapshotTreeItem(
           group.name,
-          vscode.TreeItemCollapsibleState.Collapsed,
+          groupCollapsibleState,
           "snapshotGroup",
           snapshot,
           group,
@@ -183,17 +241,21 @@ export class SnapshotTreeProvider
     }
 
     const ungrouped = snapshot.files.filter((f) => !f.groupId);
-    if (ungrouped.length > 0) {
+    const matchingUngrouped = ungrouped.filter((f) => this.fileMatchesSearch(f.path));
+    if (ungrouped.length > 0 && (!this.isFilteringFiles() || matchingUngrouped.length > 0)) {
       const ungroupedItem = new SnapshotTreeItem(
         t("Ungrouped"),
-        vscode.TreeItemCollapsibleState.Collapsed,
+        groupCollapsibleState,
         "snapshotGroup",
         snapshot,
         undefined,
         undefined,
         true
       );
-      ungroupedItem.description = t("{0} file(s)", ungrouped.length);
+      ungroupedItem.description = t(
+        "{0} file(s)",
+        this.isFilteringFiles() ? matchingUngrouped.length : ungrouped.length
+      );
       items.push(ungroupedItem);
     }
 
@@ -209,7 +271,9 @@ export class SnapshotTreeProvider
       ? snapshot.files.filter((f) => !f.groupId)
       : snapshot.files.filter((f) => f.groupId === group?.id);
 
-    return files.map((file) => this.createFileItem(snapshot, file));
+    return files
+      .filter((file) => this.fileMatchesSearch(file.path))
+      .map((file) => this.createFileItem(snapshot, file));
   }
 
   private createFileItem(snapshot: Snapshot, file: SnapshotFile): SnapshotTreeItem {

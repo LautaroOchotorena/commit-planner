@@ -15,6 +15,7 @@ You always commit and push manually.
 - **Open File** and **Compare with Last Snapshot** toolbar buttons on every snapshot setup step (file selection, name, groups, and group assignment)
 - Stores exact file copies in internal storage (outside the repo by default)
 - Provides a **Commit Planner** side panel with colored **commit groups**
+- **Search Files** in the panel toolbar — filter planned commits by file name or path across all snapshots
 - **Activate** a snapshot — backs up the current version of each snapshot file, then applies the saved copies (or deletions)
 - **Deactivate** — restores the backed-up files so you can return to your previous work
 - **Stage Group for Commit** — stages a group's files in Git and fills the SCM commit message with the group name (only while that snapshot is active)
@@ -88,6 +89,12 @@ Recommended flow: activate → stage → commit → push → deactivate to get y
 | Remove from Planned Commit | `commitPlanner.removeFileFromSnapshot` |
 | Move to Group | `commitPlanner.assignFileToGroup` |
 | Add Files to Group | `commitPlanner.addFilesToGroup` |
+| Search Files | `commitPlanner.searchSnapshotFiles` |
+| Clear File Search | `commitPlanner.clearSnapshotFileSearch` |
+
+## Searching files in snapshots
+
+Use the **Search Files** button (magnifying glass) in the Commit Planner panel toolbar to filter by file name or path. The filter matches against the full path and the file name (case-insensitive). Only planned commits and groups that contain matching files are shown, and matching nodes expand automatically. Clear the filter with the **Clear File Search** button or by submitting an empty search. While a filter is active, the panel shows a status message with the current query.
 
 ## Commit groups
 

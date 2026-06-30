@@ -5,6 +5,15 @@ All notable changes to the **Commit Planner** extension are documented in this f
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.5] - 2026-06-29
+
+### Added
+
+- **Search Files** — filter the Commit Planner panel by file name or path across all planned commits
+- Matching snapshots and groups expand automatically while a filter is active
+- **Clear File Search** toolbar button to reset the filter
+- Panel status message shows the active filter query
+
 ## [0.1.4] - 2026-06-18
 
 ### Added
@@ -77,6 +86,7 @@ Initial release.
 - MVP supports a single workspace folder
 - Git renames are treated as delete + add
 
+[0.1.5]: https://github.com/LautaroOchotorena/commit-planner/releases/tag/v0.1.5
 [0.1.4]: https://github.com/LautaroOchotorena/commit-planner/releases/tag/v0.1.4
 [0.1.1]: https://github.com/LautaroOchotorena/commit-planner/releases/tag/v0.1.1
 [0.1.0]: https://github.com/LautaroOchotorena/commit-planner/releases/tag/v0.1.0

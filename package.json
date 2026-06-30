@@ -2,7 +2,7 @@
   "name": "commit-planner",
   "displayName": "%displayName%",
   "description": "%description%",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "icon": "icon.png",
   "l10n": "./l10n",
   "engines": {
@@ -89,6 +89,18 @@
         "icon": "$(refresh)"
       },
       {
+        "command": "commitPlanner.searchSnapshotFiles",
+        "title": "%command.searchSnapshotFiles.title%",
+        "category": "%command.category%",
+        "icon": "$(search)"
+      },
+      {
+        "command": "commitPlanner.clearSnapshotFileSearch",
+        "title": "%command.clearSnapshotFileSearch.title%",
+        "category": "%command.category%",
+        "icon": "$(close)"
+      },
+      {
         "command": "commitPlanner.addGroup",
         "title": "%command.addGroup.title%",
         "category": "%command.category%",
@@ -157,6 +169,16 @@
         {
           "command": "commitPlanner.refresh",
           "when": "view == commitPlanner.snapshots",
+          "group": "navigation"
+        },
+        {
+          "command": "commitPlanner.searchSnapshotFiles",
+          "when": "view == commitPlanner.snapshots",
+          "group": "navigation"
+        },
+        {
+          "command": "commitPlanner.clearSnapshotFileSearch",
+          "when": "view == commitPlanner.snapshots && commitPlanner.snapshotFileSearchActive",
           "group": "navigation"
         },
         {
@@ -300,6 +322,14 @@
         },
         {
           "command": "commitPlanner.refresh",
+          "when": "false"
+        },
+        {
+          "command": "commitPlanner.searchSnapshotFiles",
+          "when": "false"
+        },
+        {
+          "command": "commitPlanner.clearSnapshotFileSearch",
           "when": "false"
         },
         {
