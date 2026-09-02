@@ -101,12 +101,15 @@ export async function handleReviewButton(
   ctx: SnapshotReviewContext,
   entry?: GitStatusEntry
 ): Promise<void> {
+  const reviewAction = (button as ReviewQuickInputButton).reviewAction;
+  if (reviewAction !== "open" && reviewAction !== "compare") {
+    return;
+  }
+
   const target = entry ?? (await promptPickEntryForReview(ctx));
   if (!target) {
     return;
   }
-
-  const reviewAction = (button as ReviewQuickInputButton).reviewAction;
 
   if (reviewAction === "open") {
     await openWorkspaceFileForReview(ctx.workspaceRoot, target);

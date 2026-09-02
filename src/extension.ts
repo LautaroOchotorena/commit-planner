@@ -4,7 +4,10 @@ import * as vscode from "vscode";
 import { getGitStatus, isGitRepository } from "./git";
 import { stageGroupForCommit } from "./gitScm";
 import { computeFileSelectionHints, buildFileSelectionEntries } from "./fileSelectionHints";
-import { promptSelectGitFiles } from "./fileSelectionQuickPick";
+import {
+  promptSelectGitFiles,
+  registerFileSelectionCommands,
+} from "./fileSelectionQuickPick";
 import { promptOrganizeIntoGroups } from "./grouping";
 import { openDiffWithSnapshotFile } from "./snapshotCompare";
 import { promptReviewableInputBox } from "./snapshotWizardReview";
@@ -59,6 +62,7 @@ export function activate(context: vscode.ExtensionContext): void {
   );
   statusBarItem.command = "commitPlanner.deactivateSnapshot";
   context.subscriptions.push(statusBarItem);
+  registerFileSelectionCommands(context);
 
   context.subscriptions.push(
     vscode.commands.registerCommand("commitPlanner.createSnapshot", () =>

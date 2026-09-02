@@ -2,7 +2,7 @@
   "name": "commit-planner",
   "displayName": "%displayName%",
   "description": "%description%",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "icon": "icon.png",
   "l10n": "./l10n",
   "engines": {
@@ -147,6 +147,38 @@
         "title": "%command.stageGroupForCommit.title%",
         "category": "%command.category%",
         "icon": "$(git-stash-apply)"
+      },
+      {
+        "command": "commitPlanner.selectFilesAbove",
+        "title": "%command.selectFilesAbove.title%",
+        "category": "%command.category%"
+      },
+      {
+        "command": "commitPlanner.selectFilesBelow",
+        "title": "%command.selectFilesBelow.title%",
+        "category": "%command.category%"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "commitPlanner.selectFilesAbove",
+        "key": "alt+up",
+        "when": "commitPlanner.fileSelectionPicker && inQuickInput && quickInputType == 'quickPick'"
+      },
+      {
+        "command": "commitPlanner.selectFilesBelow",
+        "key": "alt+down",
+        "when": "commitPlanner.fileSelectionPicker && inQuickInput && quickInputType == 'quickPick'"
+      },
+      {
+        "command": "commitPlanner.selectFilesAbove",
+        "key": "alt+up",
+        "when": "commitPlanner.fileSelectionPicker && inQuickInput"
+      },
+      {
+        "command": "commitPlanner.selectFilesBelow",
+        "key": "alt+down",
+        "when": "commitPlanner.fileSelectionPicker && inQuickInput"
       }
     ],
     "views": {
@@ -362,6 +394,14 @@
         },
         {
           "command": "commitPlanner.stageGroupForCommit",
+          "when": "false"
+        },
+        {
+          "command": "commitPlanner.selectFilesAbove",
+          "when": "false"
+        },
+        {
+          "command": "commitPlanner.selectFilesBelow",
           "when": "false"
         },
         {

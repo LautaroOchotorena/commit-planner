@@ -5,6 +5,19 @@ All notable changes to the **Commit Planner** extension are documented in this f
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.6] - 2026-09-01
+
+### Added
+
+- **Alt+↑** / **Alt+↓** in the file picker — toggle the focused file and every file above or below it (marked files unmark, unmarked files mark; files outside the range stay unchanged)
+- Toolbar **↑** / **↓** buttons in the file picker for the same range toggle
+- Shortcut hint in the file picker placeholder
+- Same range shortcuts when assigning files to a group while creating a planned commit
+
+### Fixed
+
+- Alt+↑ / Alt+↓ did nothing in the file picker because the keybindings used the wrong Quick Pick context (`inQuickOpen` instead of `inQuickInput`) and lost to VS Code's own Alt+arrow shortcuts
+
 ## [0.1.5] - 2026-06-29
 
 ### Added
@@ -86,6 +99,7 @@ Initial release.
 - MVP supports a single workspace folder
 - Git renames are treated as delete + add
 
+[0.1.6]: https://github.com/LautaroOchotorena/commit-planner/releases/tag/v0.1.6
 [0.1.5]: https://github.com/LautaroOchotorena/commit-planner/releases/tag/v0.1.5
 [0.1.4]: https://github.com/LautaroOchotorena/commit-planner/releases/tag/v0.1.4
 [0.1.1]: https://github.com/LautaroOchotorena/commit-planner/releases/tag/v0.1.1

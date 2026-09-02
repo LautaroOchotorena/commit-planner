@@ -27,5 +27,7 @@
   "command.removeFileFromSnapshot.title": "Remove from Planned Commit",
   "command.assignFileToGroup.title": "Move to Group",
   "command.addFilesToGroup.title": "Add Files to Group",
-  "command.stageGroupForCommit.title": "Stage Group for Commit"
+  "command.stageGroupForCommit.title": "Stage Group for Commit",
+  "command.selectFilesAbove.title": "Toggle All Files Above",
+  "command.selectFilesBelow.title": "Toggle All Files Below"
 }

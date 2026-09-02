@@ -8,6 +8,7 @@ You always commit and push manually.
 
 - Reads changed files from `git status --porcelain`
 - Lets you pick which files to save (modified, added, deleted, untracked, etc.)
+- In the file picker, **Alt+↑** toggles the focused file and every file above it; **Alt+↓** toggles the focused file and every file below it
 - Highlights files during selection: never saved before, or changed since the most recent planned commit that included them
 - Files from saved planned commits that no longer appear in `git status` are still offered for selection (e.g. after reverting a file to match HEAD while an older planned commit still holds a different version)
 - Color-coded dots in the file picker: green = never in a planned commit, orange = changed since a past planned commit, blue = in a past planned commit but clean vs Git
@@ -39,6 +40,20 @@ The extension may run `git add` only when you explicitly choose **Stage Group fo
 7. Repeat for other saved planned commits whenever you want
 
 You can maintain several snapshots at once, each representing a different planned commit.
+
+## File picker shortcuts
+
+When choosing files for a planned commit (or assigning files to a group while creating one):
+
+| Shortcut | Action |
+|----------|--------|
+| **Alt+↑** | Toggle the focused file and every file above it |
+| **Alt+↓** | Toggle the focused file and every file below it |
+| Toolbar **↑** / **↓** | Same range toggle as Alt+↑ / Alt+↓ |
+| Space | Toggle the focused file |
+| Checkbox next to the filter box | Select or deselect all visible files |
+
+**Alt+↑** / **Alt+↓** invert each checkbox in that range: marked files become unmarked, unmarked files become marked. Files outside the range stay as they are. The focused file is included.
 
 ## How activation works
 
@@ -89,6 +104,8 @@ Recommended flow: activate → stage → commit → push → deactivate to get y
 | Remove from Planned Commit | `commitPlanner.removeFileFromSnapshot` |
 | Move to Group | `commitPlanner.assignFileToGroup` |
 | Add Files to Group | `commitPlanner.addFilesToGroup` |
+| Toggle All Files Above | `commitPlanner.selectFilesAbove` |
+| Toggle All Files Below | `commitPlanner.selectFilesBelow` |
 | Search Files | `commitPlanner.searchSnapshotFiles` |
 | Clear File Search | `commitPlanner.clearSnapshotFileSearch` |
 

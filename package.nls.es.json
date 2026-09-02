@@ -27,5 +27,7 @@
   "command.removeFileFromSnapshot.title": "Quitar del commit planificado",
   "command.assignFileToGroup.title": "Mover a grupo",
   "command.addFilesToGroup.title": "Agregar archivos al grupo",
-  "command.stageGroupForCommit.title": "Preparar grupo para commit"
+  "command.stageGroupForCommit.title": "Preparar grupo para commit",
+  "command.selectFilesAbove.title": "Invertir todos los archivos de arriba",
+  "command.selectFilesBelow.title": "Invertir todos los archivos de abajo"
 }
