@@ -5,6 +5,8 @@ import {
 } from "./fileSelectionHints";
 import {
   getFileSelectionHintIconPath,
+  getFileSelectionMarkIconPath,
+  getUnchangedSinceSnapshotIconPath,
 } from "./fileSelectionHintVisuals";
 import {
   FileSelectionRangeDirection,
@@ -67,6 +69,27 @@ function buildQuickPickItems(
       picked: false,
     };
   });
+}
+
+function createFileSelectionLegendButtons(): vscode.QuickInputButton[] {
+  return [
+    {
+      iconPath: getFileSelectionMarkIconPath("never_snapshotted"),
+      tooltip: t("Never in a planned commit"),
+    },
+    {
+      iconPath: getFileSelectionMarkIconPath("modified_since_snapshot"),
+      tooltip: t("Changed since the most recent planned commit"),
+    },
+    {
+      iconPath: getFileSelectionMarkIconPath("in_past_snapshot"),
+      tooltip: t("In a past planned commit, not in Git status"),
+    },
+    {
+      iconPath: getUnchangedSinceSnapshotIconPath(),
+      tooltip: t("Matches the last planned commit and still in Git status"),
+    },
+  ];
 }
 
 function isAltKeyHeld(quickPick: vscode.QuickPick<GitFileQuickPickItem>): boolean {
@@ -132,7 +155,13 @@ export async function promptSelectGitFiles(
     iconPath: new vscode.ThemeIcon("arrow-down"),
     tooltip: t("Toggle all files below (Alt+↓)"),
   };
-  quickPick.buttons = [...quickPick.buttons, selectAboveButton, selectBelowButton];
+  const legendButtons = createFileSelectionLegendButtons();
+  quickPick.buttons = [
+    ...quickPick.buttons,
+    selectAboveButton,
+    selectBelowButton,
+    ...legendButtons,
+  ];
 
   const pickedPaths = new Set(
     initialPicked ?? (defaultPickAll ? entries.map((entry) => entry.path) : [])
@@ -205,6 +234,9 @@ export async function promptSelectGitFiles(
   };
 
   quickPick.onDidTriggerButton((button) => {
+    if (legendButtons.includes(button)) {
+      return;
+    }
     if (button === selectAboveButton) {
       session.selectRange("above");
       return;

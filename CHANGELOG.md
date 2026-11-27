@@ -5,6 +5,14 @@ All notable changes to the **Commit Planner** extension are documented in this f
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.7] - 2026-11-26
+
+### Added
+
+- Color legend in the file picker toolbar: green, orange, blue, and an outline dot. Hover each icon to read what that mark means
+- The outline dot means the file matches the last planned commit and still appears in Git status (those files have no colored dot in the list)
+- Same legend when assigning files to a group while creating a planned commit
+
 ## [0.1.6] - 2026-09-01
 
 ### Added
@@ -99,6 +107,7 @@ Initial release.
 - MVP supports a single workspace folder
 - Git renames are treated as delete + add
 
+[0.1.7]: https://github.com/LautaroOchotorena/commit-planner/releases/tag/v0.1.7
 [0.1.6]: https://github.com/LautaroOchotorena/commit-planner/releases/tag/v0.1.6
 [0.1.5]: https://github.com/LautaroOchotorena/commit-planner/releases/tag/v0.1.5
 [0.1.4]: https://github.com/LautaroOchotorena/commit-planner/releases/tag/v0.1.4

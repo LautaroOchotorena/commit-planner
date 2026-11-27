@@ -22,11 +22,37 @@ const HINT_DOT_COLORS: Record<FileSelectionMark, HintDotColors> = {
   },
 };
 
-function coloredDotUri(color: string): vscode.Uri {
+/** Outline dot for files that match the last planned commit and remain in Git status. */
+const UNCHANGED_DOT_COLORS: HintDotColors = {
+  light: "#6b6b6b",
+  dark: "#c8c8c8",
+};
+
+function coloredDotUri(color: string, outline = false): vscode.Uri {
+  const circle = outline
+    ? `<circle cx="8" cy="8" r="4.25" fill="none" stroke="${color}" stroke-width="1.5"/>`
+    : `<circle cx="8" cy="8" r="5" fill="${color}"/>`;
   const svg =
     `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16">` +
-    `<circle cx="8" cy="8" r="5" fill="${color}"/></svg>`;
+    `${circle}</svg>`;
   return vscode.Uri.parse(`data:image/svg+xml;utf8,${encodeURIComponent(svg)}`);
+}
+
+function iconPathFor(colors: HintDotColors, outline = false): { light: vscode.Uri; dark: vscode.Uri } {
+  return {
+    light: coloredDotUri(colors.light, outline),
+    dark: coloredDotUri(colors.dark, outline),
+  };
+}
+
+export function getFileSelectionMarkIconPath(
+  mark: FileSelectionMark
+): { light: vscode.Uri; dark: vscode.Uri } {
+  return iconPathFor(HINT_DOT_COLORS[mark]);
+}
+
+export function getUnchangedSinceSnapshotIconPath(): { light: vscode.Uri; dark: vscode.Uri } {
+  return iconPathFor(UNCHANGED_DOT_COLORS, true);
 }
 
 export function getFileSelectionHintIconPath(
@@ -37,9 +63,5 @@ export function getFileSelectionHintIconPath(
     return undefined;
   }
 
-  const colors = HINT_DOT_COLORS[mark];
-  return {
-    light: coloredDotUri(colors.light),
-    dark: coloredDotUri(colors.dark),
-  };
+  return getFileSelectionMarkIconPath(mark);
 }
